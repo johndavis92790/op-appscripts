@@ -98,3 +98,6 @@ Remove progress dialog from callback - let import run in background and show com
 
 ## Version 13 - 2026-01-06 12:28
 Fix getUi() error - show error message instead of dialog when config missing
+
+## Version 14 - 2026-01-06 12:30
+Show config dialog when missing, with graceful fallback for non-UI contexts

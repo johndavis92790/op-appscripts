@@ -140,13 +140,18 @@ function gridImporter_importReport() {
     }
     
     if (!apiKey || !reportId) {
-      // Config is missing - show error message instead of dialog
-      // Cannot show dialog from library context when called from customer sheet
-      throw new Error(
-        'Grid Importer configuration is missing or incomplete.\n\n' +
-        'Please use the menu: ObservePoint Tools > Grid API Importer > Initialize Config\n' +
-        'Then fill in your API key and Report ID in the GridImporter_Config sheet.'
-      );
+      // Config is missing - try to show dialog, but handle context issues
+      try {
+        showGridImporterConfigDialog();
+        return;
+      } catch (e) {
+        // If we can't show dialog (e.g., called from non-UI context), throw helpful error
+        throw new Error(
+          'Grid Importer configuration is missing or incomplete.\n\n' +
+          'Please use the menu: ObservePoint Tools > Grid API Importer > Initialize Config\n' +
+          'Then fill in your API key and Report ID in the GridImporter_Config sheet.'
+        );
+      }
     }
     
     log('INFO', 'import_start', `Starting import of saved report ${reportId}`);
