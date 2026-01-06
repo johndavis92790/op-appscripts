@@ -86,3 +86,6 @@ Add live progress dialog to Grid Importer - shows real-time import status after 
 
 ## Version 9 - 2026-01-06 12:15
 Fix DIALOG_STYLES reference error - convert constant to function for customer sheet compatibility
+
+## Version 10 - 2026-01-06 12:20
+Fix gridImporter_initConfig - add missing LOG_SHEET_NAME constant

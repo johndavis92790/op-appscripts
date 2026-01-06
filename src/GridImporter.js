@@ -14,6 +14,7 @@
 const GRID_CONFIG_SHEET_NAME = 'GridImporter_Config';
 const GRID_DATA_SHEET_NAME = 'Imported_Data';
 const GRID_PROGRESS_SHEET_NAME = 'GridImporter_Progress';
+const LOG_SHEET_NAME = 'Execution_Log';
 
 const GRID_API_BASE = 'https://api.observepoint.com/v3/reports/grid';
 const ROWS_PER_PAGE = 10000;
