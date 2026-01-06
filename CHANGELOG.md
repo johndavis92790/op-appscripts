@@ -80,3 +80,6 @@ Menu sync: customer template now auto-generates from Main.js menu structure to e
 
 ## Version 7 - 2026-01-06 11:53
 Exclude Customer Management submenu from customer template - internal tool only
+
+## Version 8 - 2026-01-06 11:57
+Add live progress dialog to Grid Importer - shows real-time import status after Save & Import

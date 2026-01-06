@@ -130,11 +130,8 @@ function showGridImporterConfigDialog() {
             
             google.script.run
               .withSuccessHandler(function() {
+                // Close config dialog and show progress dialog
                 google.script.host.close();
-                // Show a message that import is starting
-                setTimeout(function() {
-                  alert('Configuration saved! Import will start in a moment...');
-                }, 100);
               })
               .withFailureHandler(function(error) {
                 buttons.forEach(btn => btn.disabled = false);
@@ -186,6 +183,9 @@ function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) 
   
   Logger.info('config_saved', 'Grid Importer configuration saved');
   
+  // Show progress dialog immediately
+  showGridImporterLiveProgress();
+  
   // Trigger import in a separate execution context
   // This avoids dialog conflicts by running after this function completes
   ScriptApp.newTrigger('gridImporter_runImportAfterConfig')
@@ -194,6 +194,124 @@ function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) 
     .create();
   
   return true;
+}
+
+/**
+ * Show live progress dialog that updates during import
+ */
+function showGridImporterLiveProgress() {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${DIALOG_STYLES}
+        <style>
+          .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+          }
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+          }
+          .status-text {
+            text-align: center;
+            color: #5f6368;
+            margin: 10px 0;
+            min-height: 20px;
+          }
+          .spinner-large {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      </head>
+      <body>
+        <h2>📊 Importing Data...</h2>
+        
+        <div class="spinner-large"></div>
+        
+        <div class="status-text" id="statusText">Initializing import...</div>
+        
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="section">
+          <p id="detailsText" style="font-size: 13px; color: #5f6368; text-align: center;">
+            Please wait while we fetch your data from ObservePoint...
+          </p>
+        </div>
+        
+        <script>
+          // Poll for progress updates
+          function checkProgress() {
+            google.script.run
+              .withSuccessHandler(updateProgress)
+              .withFailureHandler(function(error) {
+                console.error('Progress check failed:', error);
+              })
+              .getImportProgress();
+          }
+          
+          function updateProgress(progress) {
+            if (!progress) {
+              setTimeout(checkProgress, 1000);
+              return;
+            }
+            
+            document.getElementById('statusText').textContent = progress.status || 'Processing...';
+            document.getElementById('detailsText').textContent = progress.details || '';
+            
+            if (progress.percent) {
+              document.getElementById('progressFill').style.width = progress.percent + '%';
+              document.getElementById('progressFill').textContent = progress.percent + '%';
+            }
+            
+            if (progress.complete) {
+              // Import is done, close this dialog
+              setTimeout(function() {
+                google.script.host.close();
+              }, 1000);
+            } else {
+              // Keep polling
+              setTimeout(checkProgress, 1000);
+            }
+          }
+          
+          // Start polling
+          setTimeout(checkProgress, 1000);
+        </script>
+      </body>
+    </html>
+  `;
+  
+  const htmlOutput = HtmlService.createHtmlOutput(html)
+    .setWidth(500)
+    .setHeight(400);
+  
+  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Import Progress');
 }
 
 /**

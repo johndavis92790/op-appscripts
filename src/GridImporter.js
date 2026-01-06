@@ -13,10 +13,19 @@
 
 const GRID_CONFIG_SHEET_NAME = 'GridImporter_Config';
 const GRID_DATA_SHEET_NAME = 'Imported_Data';
+const GRID_PROGRESS_SHEET_NAME = 'GridImporter_Progress';
 
 const GRID_API_BASE = 'https://api.observepoint.com/v3/reports/grid';
 const ROWS_PER_PAGE = 10000;
 const MAX_SHEET_ROWS = 10000000;
+
+// Global progress tracking
+var IMPORT_PROGRESS = {
+  status: 'Not started',
+  details: '',
+  percent: 0,
+  complete: false
+};
 
 function gridImporter_initConfig() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -109,6 +118,9 @@ function gridImporter_importReport() {
   const startTime = new Date();
   
   try {
+    // Reset progress
+    updateImportProgress('Starting import...', '', 0, false);
+    
     // Check if config exists, if not show dialog
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const configSheet = ss.getSheetByName(GRID_CONFIG_SHEET_NAME);
@@ -133,9 +145,11 @@ function gridImporter_importReport() {
     }
     
     log('INFO', 'import_start', `Starting import of saved report ${reportId}`);
+    updateImportProgress('Fetching report configuration...', 'Connecting to ObservePoint API', 5, false);
     
     const reportData = getQueryDefinition(apiKey, reportId);
     log('INFO', 'query_fetched', `Retrieved query definition for report: ${reportData.name || reportId}`);
+    updateImportProgress('Configuration retrieved', `Report: ${reportData.name || reportId}`, 10, false);
     
     // Create unique sheet name based on report name and timestamp
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmmss');
@@ -145,12 +159,14 @@ function gridImporter_importReport() {
     
     const duration = ((new Date() - startTime) / 1000).toFixed(2);
     log('INFO', 'import_complete', `Import completed successfully. ${totalRows} rows imported in ${duration} seconds.`);
+    updateImportProgress('Import complete!', `${totalRows.toLocaleString()} rows imported in ${duration}s`, 100, true);
     
     // Show success dialog
     showGridImporterProgressDialog(reportData.name, totalRows, duration, sheetName);
     
   } catch (error) {
     log('ERROR', 'import_failed', error.toString());
+    updateImportProgress('Import failed', error.toString(), 0, true);
     SpreadsheetApp.getUi().alert(
       'Import Failed',
       'Error: ' + error.toString() + '\n\nCheck the Import_Log sheet for details.',
@@ -219,6 +235,7 @@ function fetchAllData(apiKey, gridEntityType, queryDefinition, batchSize, maxPag
     }
     
     log('INFO', 'fetch_page', `Fetching page ${currentPage + 1}...`);
+    updateImportProgress(`Fetching page ${currentPage + 1}`, `${totalRows.toLocaleString()} rows imported so far`, 10 + (currentPage * 2), false);
     
     const pageData = fetchGridPage(apiKey, gridEntityType, queryDefinition, currentPage);
     
@@ -252,6 +269,7 @@ function fetchAllData(apiKey, gridEntityType, queryDefinition, batchSize, maxPag
     log('INFO', 'page_fetched', `Page ${currentPage + 1}: ${rowsData.length} rows (total: ${totalRows})`);
     
     if (allRows.length >= batchSize) {
+      updateImportProgress(`Writing to sheet...`, `${totalRows.toLocaleString()} rows fetched, writing batch`, 10 + (currentPage * 2), false);
       currentSheetRow = writeToSheet(dataSheet, columnHeaders, allRows, currentPage === 0, currentSheetRow);
       allRows = [];
     }
