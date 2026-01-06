@@ -74,3 +74,6 @@ Initial version
 
 ## Version 5 - 2026-01-06 10:54
 Project cleanup: removed 8 obsolete files, updated documentation to reflect unified library architecture
+
+## Version 6 - 2026-01-06 11:36
+Menu sync: customer template now auto-generates from Main.js menu structure to ensure menus stay in sync
