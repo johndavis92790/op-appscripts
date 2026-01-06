@@ -125,3 +125,6 @@ Simplified Grid Importer - separate menu items for config and import, no dialogs
 
 ## Version  - 2026-01-06 14:46
 Ensure menu structure stays in sync - added dynamic wrapper generation
+
+## Version  - 2026-01-06 14:52
+Test auto-generation of customer template before deployment

@@ -218,7 +218,107 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 4. **Customer configures** API key via menu
 5. **Tools are ready** to use
 
+## ⚠️ Library Context Limitations
+
+### UI Interactions in Library Functions
+
+**IMPORTANT**: Library functions **cannot** use `SpreadsheetApp.getUi()` when called from customer sheets. This is an Apps Script limitation.
+
+#### What Doesn't Work
+```javascript
+// ❌ This will fail when called from customer sheet
+function myLibraryFunction() {
+  SpreadsheetApp.getUi().alert('Hello'); // Error: Cannot call getUi() from this context
+  SpreadsheetApp.getUi().showModalDialog(html, 'Title'); // Error
+}
+```
+
+#### Why This Happens
+- When a customer sheet calls a library function, it runs in the **library's context**
+- The library context doesn't have access to the customer sheet's UI
+- This affects: `alert()`, `prompt()`, `showModalDialog()`, `showSidebar()`, etc.
+
+#### The Solution: No UI in Core Logic
+
+**Design Pattern**: Keep all UI interactions out of library functions that do actual work.
+
+```javascript
+// ✅ Library function - NO UI calls
+function executeImport(apiKey, reportId) {
+  try {
+    log('INFO', 'import_start', 'Starting import');
+    const data = fetchData(apiKey, reportId);
+    writeToSheet(data);
+    log('INFO', 'import_complete', 'Import finished');
+    return { success: true, rows: data.length };
+  } catch (error) {
+    log('ERROR', 'import_failed', error.toString());
+    throw error; // Let customer wrapper handle UI
+  }
+}
+```
+
+#### Current Implementation
+
+**Grid API Importer** uses this pattern:
+- **Initialize Config**: Creates empty config sheet (no dialogs)
+- **Import Report**: Reads config, runs import silently, logs to `Execution_Log` sheet
+- **No progress dialogs**: All progress tracked in log sheet
+- **No completion dialogs**: Check log sheet for results
+
+#### Best Practices
+
+1. **Use logging instead of alerts**
+   ```javascript
+   // ❌ Don't do this
+   SpreadsheetApp.getUi().alert('Import complete');
+   
+   // ✅ Do this
+   log('INFO', 'import_complete', 'Import completed successfully');
+   ```
+
+2. **Throw errors instead of showing error dialogs**
+   ```javascript
+   // ❌ Don't do this
+   SpreadsheetApp.getUi().alert('Error: ' + error);
+   
+   // ✅ Do this
+   throw new Error('Config missing. Please run Initialize Config first.');
+   ```
+
+3. **Use config sheets instead of prompts**
+   ```javascript
+   // ❌ Don't do this
+   const apiKey = SpreadsheetApp.getUi().prompt('Enter API key');
+   
+   // ✅ Do this
+   const apiKey = getConfigValue('OP_API_KEY');
+   ```
+
+4. **Log progress instead of showing progress dialogs**
+   ```javascript
+   // ❌ Don't do this
+   updateProgressDialog('Fetching page 1...');
+   
+   // ✅ Do this
+   log('INFO', 'fetch_page', 'Fetching page 1 of 10');
+   ```
+
+#### For Tool Developers
+
+When adding new tools to this library:
+- ✅ **DO** use config sheets for user input
+- ✅ **DO** log all progress to `Execution_Log` sheet
+- ✅ **DO** throw descriptive errors
+- ✅ **DO** return result objects from functions
+- ❌ **DON'T** call `getUi()` in any library function
+- ❌ **DON'T** show dialogs, alerts, or prompts
+- ❌ **DON'T** try to display progress during execution
+
 ## 🐛 Troubleshooting
+
+### "Cannot call SpreadsheetApp.getUi() from this context"
+This means a library function is trying to show UI. See **Library Context Limitations** above for the solution.
 
 ### "clasp not found"
 ```bash
