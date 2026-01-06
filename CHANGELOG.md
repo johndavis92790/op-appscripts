@@ -92,3 +92,9 @@ Fix gridImporter_initConfig - add missing LOG_SHEET_NAME constant
 
 ## Version 11 - 2026-01-06 12:23
 Fix eternal spinner - show progress dialog from client-side after config saves
+
+## Version 12 - 2026-01-06 12:26
+Remove progress dialog from callback - let import run in background and show completion dialog
+
+## Version 13 - 2026-01-06 12:28
+Fix getUi() error - show error message instead of dialog when config missing

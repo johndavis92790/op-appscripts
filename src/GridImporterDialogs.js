@@ -130,12 +130,8 @@ function showGridImporterConfigDialog() {
             
             google.script.run
               .withSuccessHandler(function() {
-                // Close config dialog
+                // Close config dialog and show simple message
                 google.script.host.close();
-                // Show progress dialog after a brief delay
-                setTimeout(function() {
-                  google.script.run.showGridImporterLiveProgress();
-                }, 200);
               })
               .withFailureHandler(function(error) {
                 buttons.forEach(btn => btn.disabled = false);
