@@ -22,7 +22,6 @@ function onOpen() {
   ui.createMenu('ObservePoint Tools')
     .addSubMenu(ui.createMenu('Grid API Importer')
       .addItem('Import Saved Report', 'gridImporter_importReport')
-      .addItem('Initialize Config', 'gridImporter_initConfig')
       .addItem('Clear Data', 'gridImporter_clearData'))
     .addSubMenu(ui.createMenu('Webhook Automation')
       .addItem('Setup Wizard', 'webhooks_setupWizard')

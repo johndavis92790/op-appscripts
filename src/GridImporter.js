@@ -29,40 +29,8 @@ var IMPORT_PROGRESS = {
 };
 
 function gridImporter_initConfig() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let configSheet = ss.getSheetByName(GRID_CONFIG_SHEET_NAME);
-  
-  if (!configSheet) {
-    configSheet = ss.insertSheet(GRID_CONFIG_SHEET_NAME);
-  }
-  
-  configSheet.clear();
-  
-  const headers = [
-    ['Setting', 'Value', 'Description'],
-    ['OP_API_KEY', '', 'Your ObservePoint API key from https://app.observepoint.com/my-profile'],
-    ['SAVED_REPORT_ID', '', 'The ID of the saved report to import (e.g., 16008)'],
-    ['BATCH_SIZE', '50000', 'Number of rows to write at once (adjust if hitting memory limits)'],
-    ['MAX_PAGES', '', 'Maximum pages to fetch (leave empty for all pages)']
-  ];
-  
-  configSheet.getRange(1, 1, headers.length, 3).setValues(headers);
-  configSheet.getRange('A1:C1').setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
-  configSheet.setColumnWidth(1, 200);
-  configSheet.setColumnWidth(2, 200);
-  configSheet.setColumnWidth(3, 400);
-  configSheet.setFrozenRows(1);
-  
-  createLogSheet();
-  
-  SpreadsheetApp.getUi().alert(
-    'Configuration Initialized',
-    'Config sheet created. Please add:\n\n' +
-    '1. Your ObservePoint API key\n' +
-    '2. The Saved Report ID to import\n\n' +
-    'Then use ObservePoint menu > Import Saved Report',
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+  // Show the config dialog instead of just creating an empty sheet
+  showGridImporterConfigDialog();
 }
 
 function createLogSheet() {
@@ -116,74 +84,8 @@ function log(level, action, message) {
 }
 
 function gridImporter_importReport() {
-  const startTime = new Date();
-  
-  try {
-    // Reset progress
-    updateImportProgress('Starting import...', '', 0, false);
-    
-    // Check if config exists, if not show dialog
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const configSheet = ss.getSheetByName(GRID_CONFIG_SHEET_NAME);
-    
-    let apiKey, reportId, batchSize, maxPages;
-    
-    try {
-      apiKey = getConfigValue('OP_API_KEY');
-      reportId = getConfigValue('SAVED_REPORT_ID');
-      batchSize = parseInt(getConfigValue('BATCH_SIZE')) || 50000;
-      maxPages = getConfigValue('MAX_PAGES') ? parseInt(getConfigValue('MAX_PAGES')) : null;
-    } catch (e) {
-      // Config doesn't exist or is incomplete
-      apiKey = null;
-      reportId = null;
-    }
-    
-    if (!apiKey || !reportId) {
-      // Config is missing - try to show dialog, but handle context issues
-      try {
-        showGridImporterConfigDialog();
-        return;
-      } catch (e) {
-        // If we can't show dialog (e.g., called from non-UI context), throw helpful error
-        throw new Error(
-          'Grid Importer configuration is missing or incomplete.\n\n' +
-          'Please use the menu: ObservePoint Tools > Grid API Importer > Initialize Config\n' +
-          'Then fill in your API key and Report ID in the GridImporter_Config sheet.'
-        );
-      }
-    }
-    
-    log('INFO', 'import_start', `Starting import of saved report ${reportId}`);
-    updateImportProgress('Fetching report configuration...', 'Connecting to ObservePoint API', 5, false);
-    
-    const reportData = getQueryDefinition(apiKey, reportId);
-    log('INFO', 'query_fetched', `Retrieved query definition for report: ${reportData.name || reportId}`);
-    updateImportProgress('Configuration retrieved', `Report: ${reportData.name || reportId}`, 10, false);
-    
-    // Create unique sheet name based on report name and timestamp
-    const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmmss');
-    const sheetName = (reportData.name || 'Report_' + reportId).substring(0, 50) + '_' + timestamp;
-    
-    const totalRows = fetchAllData(apiKey, reportData.gridEntityType, reportData.queryDefinition, batchSize, maxPages, sheetName);
-    
-    const duration = ((new Date() - startTime) / 1000).toFixed(2);
-    log('INFO', 'import_complete', `Import completed successfully. ${totalRows} rows imported in ${duration} seconds.`);
-    updateImportProgress('Import complete!', `${totalRows.toLocaleString()} rows imported in ${duration}s`, 100, true);
-    
-    // Show success dialog
-    showGridImporterProgressDialog(reportData.name, totalRows, duration, sheetName);
-    
-  } catch (error) {
-    log('ERROR', 'import_failed', error.toString());
-    updateImportProgress('Import failed', error.toString(), 0, true);
-    SpreadsheetApp.getUi().alert(
-      'Import Failed',
-      'Error: ' + error.toString() + '\n\nCheck the Import_Log sheet for details.',
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
-    throw error;
-  }
+  // Always show config dialog first (will be prefilled if config exists)
+  showGridImporterConfigDialog();
 }
 
 function getQueryDefinition(apiKey, reportId) {

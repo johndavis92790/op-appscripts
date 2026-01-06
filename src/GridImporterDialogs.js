@@ -183,12 +183,8 @@ function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) 
   
   Logger.info('config_saved', 'Grid Importer configuration saved');
   
-  // Trigger import in a separate execution context
-  // This avoids dialog conflicts by running after this function completes
-  ScriptApp.newTrigger('gridImporter_runImportAfterConfig')
-    .timeBased()
-    .after(1000) // Run 1 second after config is saved
-    .create();
+  // Run import immediately with the provided config
+  executeGridImport(apiKey, reportId, parseInt(batchSize), maxPages ? parseInt(maxPages) : null);
   
   return true;
 }
@@ -311,21 +307,6 @@ function showGridImporterLiveProgress() {
   SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Import Progress');
 }
 
-/**
- * Run import after config is saved (triggered by time-based trigger)
- */
-function gridImporter_runImportAfterConfig() {
-  // Delete the trigger that called this
-  const triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    if (triggers[i].getHandlerFunction() === 'gridImporter_runImportAfterConfig') {
-      ScriptApp.deleteTrigger(triggers[i]);
-    }
-  }
-  
-  // Run the import
-  gridImporter_importReport();
-}
 
 function showGridImporterProgressDialog(reportName, totalRows, duration, sheetName) {
   const html = `

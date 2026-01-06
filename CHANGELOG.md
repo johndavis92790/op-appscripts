@@ -101,3 +101,6 @@ Fix getUi() error - show error message instead of dialog when config missing
 
 ## Version 14 - 2026-01-06 12:30
 Show config dialog when missing, with graceful fallback for non-UI contexts
+
+## Version 15 - 2026-01-06 12:37
+Simplify Grid Importer to single menu option - always shows config dialog with prefilled values
