@@ -104,3 +104,6 @@ Show config dialog when missing, with graceful fallback for non-UI contexts
 
 ## Version 15 - 2026-01-06 12:37
 Simplify Grid Importer to single menu option - always shows config dialog with prefilled values
+
+## Version 16 - 2026-01-06 12:42
+Remove all UI calls from import execution - fixes eternal spinner issue
