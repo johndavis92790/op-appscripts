@@ -15,6 +15,11 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   
+  // IMPORTANT: When changing this menu structure, also update:
+  // 1. scripts/generate-customer-template.sh (auto-generates customer-template/Code.js)
+  // 2. src/CustomerSheetManager.js > generateCustomerWrapperCode() function
+  // Run: ./scripts/generate-customer-template.sh after changes
+  
   ui.createMenu('ObservePoint Tools')
     .addSubMenu(ui.createMenu('Grid API Importer')
       .addItem('Initialize Config', 'gridImporter_initConfig')

@@ -122,3 +122,6 @@ Fix dialog callback - remove ObservePointTools prefix and add customer wrapper
 
 ## Version  - 2026-01-06 14:23
 Simplified Grid Importer - separate menu items for config and import, no dialogs
+
+## Version  - 2026-01-06 14:46
+Ensure menu structure stays in sync - added dynamic wrapper generation

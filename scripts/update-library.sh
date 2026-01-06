@@ -13,6 +13,16 @@ DESCRIPTION="$1"
 echo "🔄 Updating ObservePoint Toolbelt Library"
 echo ""
 
+# Auto-generate customer template files BEFORE deploying
+echo "📝 Auto-generating customer template files..."
+./scripts/generate-customer-template.sh
+
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to generate customer template"
+  exit 1
+fi
+
+echo ""
 cd src
 
 echo "📤 Pushing code changes..."
@@ -57,14 +67,9 @@ echo "" >> CHANGELOG.md
 echo "## Version $VERSION - $DATE" >> CHANGELOG.md
 echo "$DESCRIPTION" >> CHANGELOG.md
 
-# Auto-generate customer template files
-echo ""
-echo "📝 Auto-generating customer template files..."
-
-# Generate Code.js with all library functions
-./scripts/generate-customer-template.sh
-
 # Update appsscript.json to reference new version
+echo ""
+echo "📝 Updating customer template version..."
 TEMPLATE_FILE="customer-template/appsscript.json"
 if [ -f "$TEMPLATE_FILE" ]; then
   sed -i.bak "s/\"version\": \"[0-9]*\"/\"version\": \"$VERSION\"/" "$TEMPLATE_FILE"

@@ -201,78 +201,8 @@ function registerCustomerSheet(customerName, spreadsheetId, spreadsheetUrl, note
  */
 function showCustomerSheetCreatedDialog(customerName, spreadsheetUrl) {
   
-  // Wrapper code to embed in dialog
-  const wrapperCode = `/**
- * Customer Wrapper for ObservePoint CSM Toolbelt Library
- */
-
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  
-  ui.createMenu('ObservePoint Tools')
-    .addSubMenu(ui.createMenu('Grid API Importer')
-      .addItem('Import Saved Report', 'gridImporter_importReport')
-      .addItem('Initialize Config', 'gridImporter_initConfig')
-      .addItem('Clear Data', 'gridImporter_clearData'))
-    .addSubMenu(ui.createMenu('Webhook Automation')
-      .addItem('Setup Wizard', 'webhooks_setupWizard')
-      .addItem('Manual Run Primary', 'webhooks_manualRunPrimary')
-      .addItem('Manual Run Secondary', 'webhooks_manualRunSecondary')
-      .addItem('Initialize Config', 'webhooks_initConfig'))
-    .addSeparator()
-    .addItem('Initialize All Configs', 'initializeAllConfigs')
-    .addItem('View Execution Log', 'showExecutionLog')
-    .addItem('Clear Execution Log', 'clearExecutionLog')
-    .addToUi();
-}
-
-// Grid API Importer
-function gridImporter_importReport() {
-  ObservePointTools.gridImporter_importReport();
-}
-
-function gridImporter_initConfig() {
-  ObservePointTools.gridImporter_initConfig();
-}
-
-function gridImporter_clearData() {
-  ObservePointTools.gridImporter_clearData();
-}
-
-// Webhook Automation
-function webhooks_setupWizard() {
-  ObservePointTools.webhooks_setupWizard();
-}
-
-function webhooks_manualRunPrimary() {
-  ObservePointTools.webhooks_manualRunPrimary();
-}
-
-function webhooks_manualRunSecondary() {
-  ObservePointTools.webhooks_manualRunSecondary();
-}
-
-function webhooks_initConfig() {
-  ObservePointTools.webhooks_initConfig();
-}
-
-// Utilities
-function initializeAllConfigs() {
-  ObservePointTools.initializeAllConfigs();
-}
-
-function showExecutionLog() {
-  ObservePointTools.showExecutionLog();
-}
-
-function clearExecutionLog() {
-  ObservePointTools.clearExecutionLog();
-}
-
-// Webhook handler
-function doPost(e) {
-  return ObservePointTools.doPostHandler(e);
-}`;
+  // Generate wrapper code dynamically to stay in sync with Main.js
+  const wrapperCode = generateCustomerWrapperCode();
   
   const html = `
     <!DOCTYPE html>
