@@ -83,3 +83,6 @@ Exclude Customer Management submenu from customer template - internal tool only
 
 ## Version 8 - 2026-01-06 11:57
 Add live progress dialog to Grid Importer - shows real-time import status after Save & Import
+
+## Version 9 - 2026-01-06 12:15
+Fix DIALOG_STYLES reference error - convert constant to function for customer sheet compatibility

@@ -7,7 +7,7 @@ function showWelcomeDialog() {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>🚀 ObservePoint Automated Setup Wizard</h2>
@@ -76,7 +76,7 @@ function showConfigSavedDialog() {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>Configuration Saved ✅</h2>
@@ -108,7 +108,7 @@ function showAuditStartedDialog(auditName, config) {
     <html>
       <head>
         <base target="_blank">
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>Primary Audit Started ✅</h2>
@@ -175,7 +175,7 @@ function showSuccessDialog(title, message) {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>${title}</h2>

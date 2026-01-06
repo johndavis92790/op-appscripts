@@ -31,7 +31,7 @@ function showGridImporterConfigDialog() {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
         <style>
           .form-group {
             margin: 16px 0;
@@ -204,7 +204,7 @@ function showGridImporterLiveProgress() {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
         <style>
           .progress-bar {
             width: 100%;
@@ -335,7 +335,7 @@ function showGridImporterProgressDialog(reportName, totalRows, duration, sheetNa
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>Import Complete! ✅</h2>

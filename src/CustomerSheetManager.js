@@ -17,7 +17,7 @@ function showCreateCustomerSheetDialog() {
     <!DOCTYPE html>
     <html>
       <head>
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
         <style>
           .form-group {
             margin: 16px 0;
@@ -279,7 +279,7 @@ function doPost(e) {
     <html>
       <head>
         <base target="_blank">
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
         <style>
           code {
             background: #f1f3f4;
@@ -458,7 +458,7 @@ function showOutdatedSheetsDialog(outdatedSheets) {
     <html>
       <head>
         <base target="_blank">
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>⚠️ Outdated Customer Sheets</h2>

@@ -3,7 +3,8 @@
  * Modern, consistent styling for all dialogs
  */
 
-const DIALOG_STYLES = `
+function getDialogStyles() {
+  return `
   <style>
     body {
       font-family: 'Google Sans', Arial, sans-serif;
@@ -116,6 +117,7 @@ const DIALOG_STYLES = `
     }
   </style>
 `;
+}
 
 function showSetupCompleteHtmlDialog(auditName, setupStatus, config) {
   const secondaryAudit = fetchAuditDetails(config.SECONDARY_AUDIT_ID, config);
@@ -134,7 +136,7 @@ function showSetupCompleteHtmlDialog(auditName, setupStatus, config) {
     <html>
       <head>
         <base target="_blank">
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>Setup Complete! ✅</h2>
@@ -205,7 +207,7 @@ function showSecondaryAuditHtmlDialog(primaryAuditName, config) {
     <html>
       <head>
         <base target="_blank">
-        ${DIALOG_STYLES}
+        ${getDialogStyles()}
       </head>
       <body>
         <h2>Secondary Audit Options</h2>
