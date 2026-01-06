@@ -84,8 +84,10 @@ function log(level, action, message) {
 }
 
 function gridImporter_importReport() {
-  // Always show config dialog first (will be prefilled if config exists)
-  showGridImporterConfigDialog();
+  // This should not be called from library - customer wrapper handles it
+  // Customer wrapper will call getGridImporterConfig() and getGridImporterDialogHtml()
+  // then show the dialog using their own getUi()
+  throw new Error('gridImporter_importReport must be called from customer wrapper, not library');
 }
 
 function getQueryDefinition(apiKey, reportId) {

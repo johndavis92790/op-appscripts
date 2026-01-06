@@ -110,3 +110,12 @@ Remove all UI calls from import execution - fixes eternal spinner issue
 
 ## Version 17 - 2026-01-06 12:45
 Remove remaining updateImportProgress calls from fetchAllData function
+
+## Version 18 - 2026-01-06 12:50
+Fix getUi() error - customer wrapper now shows dialog using its own UI context
+
+## Version 19 - 2026-01-06 12:57
+Fix Grid Importer dialog - customer wrapper shows dialog from customer context
+
+## Version 20 - 2026-01-06 13:00
+Fix dialog callback - remove ObservePointTools prefix and add customer wrapper

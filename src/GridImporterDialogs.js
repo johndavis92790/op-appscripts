@@ -3,8 +3,10 @@
  * Provides user-friendly configuration and import experience
  */
 
-function showGridImporterConfigDialog() {
-  // Check if config already exists
+/**
+ * Get existing config values (called from customer wrapper)
+ */
+function getGridImporterConfig() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const configSheet = ss.getSheetByName(GRID_CONFIG_SHEET_NAME);
   
@@ -27,7 +29,19 @@ function showGridImporterConfigDialog() {
     }
   }
   
-  const html = `
+  return {
+    apiKey: existingApiKey,
+    reportId: existingReportId,
+    batchSize: existingBatchSize,
+    maxPages: existingMaxPages
+  };
+}
+
+/**
+ * Generate dialog HTML (called from customer wrapper)
+ */
+function getGridImporterDialogHtml(config) {
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -74,25 +88,25 @@ function showGridImporterConfigDialog() {
         <form id="configForm">
           <div class="form-group">
             <label>ObservePoint API Key <span class="required">*</span></label>
-            <input type="text" id="apiKey" value="${existingApiKey}" required placeholder="Your API key from ObservePoint">
+            <input type="text" id="apiKey" value="${config.apiKey}" required placeholder="Your API key from ObservePoint">
             <div class="help-text">Get your API key from <a href="https://app.observepoint.com/my-profile" target="_blank">ObservePoint Profile</a></div>
           </div>
           
           <div class="form-group">
             <label>Saved Report ID <span class="required">*</span></label>
-            <input type="text" id="reportId" value="${existingReportId}" required placeholder="e.g., 12345">
+            <input type="text" id="reportId" value="${config.reportId}" required placeholder="e.g., 12345">
             <div class="help-text">Find the report ID in the URL when viewing a saved report</div>
           </div>
           
           <div class="form-group">
             <label>Batch Size</label>
-            <input type="number" id="batchSize" value="${existingBatchSize}" placeholder="50000">
+            <input type="number" id="batchSize" value="${config.batchSize}" placeholder="50000">
             <div class="help-text">Number of rows to write at once (adjust if hitting memory limits)</div>
           </div>
           
           <div class="form-group">
             <label>Max Pages (Optional)</label>
-            <input type="number" id="maxPages" value="${existingMaxPages}" placeholder="Leave empty for all pages">
+            <input type="number" id="maxPages" value="${config.maxPages}" placeholder="Leave empty for all pages">
             <div class="help-text">Limit number of pages to fetch (useful for testing)</div>
           </div>
         </form>
@@ -130,13 +144,13 @@ function showGridImporterConfigDialog() {
             
             google.script.run
               .withSuccessHandler(function() {
-                // Close config dialog and show simple message
+                // Close config dialog
                 google.script.host.close();
               })
               .withFailureHandler(function(error) {
                 buttons.forEach(btn => btn.disabled = false);
                 button.innerHTML = originalText;
-                alert('Error saving config: ' + error.message);
+                alert('Error: ' + error.message);
               })
               .saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages);
           }
@@ -144,6 +158,12 @@ function showGridImporterConfigDialog() {
       </body>
     </html>
   `;
+}
+
+function showGridImporterConfigDialog() {
+  // For backward compatibility when called from library context
+  const config = getGridImporterConfig();
+  const html = getGridImporterDialogHtml(config);
   
   const htmlOutput = HtmlService.createHtmlOutput(html)
     .setWidth(550)

@@ -48,7 +48,16 @@ function gridImporter_clearData() {
 }
 
 function gridImporter_importReport() {
-  ObservePointTools.gridImporter_importReport();
+  // Show dialog from customer code (has getUi() access)
+  const config = ObservePointTools.getGridImporterConfig();
+  const html = ObservePointTools.getGridImporterDialogHtml(config);
+  const htmlOutput = HtmlService.createHtmlOutput(html).setWidth(550).setHeight(600);
+  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Grid API Importer Setup');
+}
+
+// Dialog callback - must be in customer code
+function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) {
+  ObservePointTools.saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages);
 }
 
 function initializeAllConfigs() {
