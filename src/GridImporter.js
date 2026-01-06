@@ -147,7 +147,6 @@ function fetchAllData(apiKey, gridEntityType, queryDefinition, batchSize, maxPag
     }
     
     log('INFO', 'fetch_page', `Fetching page ${currentPage + 1}...`);
-    updateImportProgress(`Fetching page ${currentPage + 1}`, `${totalRows.toLocaleString()} rows imported so far`, 10 + (currentPage * 2), false);
     
     const pageData = fetchGridPage(apiKey, gridEntityType, queryDefinition, currentPage);
     
@@ -181,7 +180,6 @@ function fetchAllData(apiKey, gridEntityType, queryDefinition, batchSize, maxPag
     log('INFO', 'page_fetched', `Page ${currentPage + 1}: ${rowsData.length} rows (total: ${totalRows})`);
     
     if (allRows.length >= batchSize) {
-      updateImportProgress(`Writing to sheet...`, `${totalRows.toLocaleString()} rows fetched, writing batch`, 10 + (currentPage * 2), false);
       currentSheetRow = writeToSheet(dataSheet, columnHeaders, allRows, currentPage === 0, currentSheetRow);
       allRows = [];
     }

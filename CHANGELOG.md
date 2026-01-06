@@ -107,3 +107,6 @@ Simplify Grid Importer to single menu option - always shows config dialog with p
 
 ## Version 16 - 2026-01-06 12:42
 Remove all UI calls from import execution - fixes eternal spinner issue
+
+## Version 17 - 2026-01-06 12:45
+Remove remaining updateImportProgress calls from fetchAllData function
