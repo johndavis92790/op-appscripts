@@ -1,0 +1,26 @@
+# clasp configuration (contains script IDs)
+.clasp.json
+*/.clasp.json
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local

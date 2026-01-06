@@ -1,0 +1,20 @@
+{
+  "name": "observepoint-appscripts-library",
+  "version": "1.0.0",
+  "description": "Unified Google Apps Script library for ObservePoint CSM workflows",
+  "scripts": {
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [
+    "observepoint",
+    "google-apps-script",
+    "csm",
+    "automation",
+    "library"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

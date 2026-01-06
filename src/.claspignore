@@ -1,0 +1,4 @@
+# Exclude non-code files
+README.md
+.claspignore
+.clasp.json

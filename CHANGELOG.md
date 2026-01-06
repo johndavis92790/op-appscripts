@@ -1,0 +1,76 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [1.0.0] - 2024-12-23
+
+### Added
+- **Shared Library System**
+  - `ObservePointClient.js` - API client with retry logic and rate limiting
+  - `SheetHelpers.js` - Sheet operations (write, format, join, filter)
+  - `Logger.js` - Consistent logging across all tools
+  - `ConfigManager.js` - Configuration management utilities
+
+- **Development Tools**
+  - `npm run new-tool` - Scaffold new tools from template
+  - `npm run deploy` - Deploy specific tool to Apps Script
+  - `npm run deploy-all` - Deploy all tools at once
+  - `npm run push-lib` - Copy shared libraries to all tools
+  - `npm run list-tools` - List all tools and their status
+
+- **Tool Template**
+  - Basic tool template with shared library integration
+  - Includes Main.js, appsscript.json, README.md
+  - Pre-configured with menu, config, and logging
+
+- **Documentation**
+  - PROJECT_CONTEXT.md - Architecture and principles
+  - API_PATTERNS.md - ObservePoint API examples
+  - TOOL_CHECKLIST.md - New tool requirements
+  - DEVELOPMENT_GUIDE.md - Daily workflows and patterns
+  - CLASP_SETUP.md - Complete clasp setup guide
+
+- **Tools**
+  - Grid API Importer - Import large reports (350k+ rows)
+  - Webhook Automation - Broken links detection workflow
+
+### Changed
+- Reorganized project structure into `/lib`, `/tools`, `/templates`, `/scripts`
+- Moved existing tools to `/tools` directory
+- Renamed all `.gs` files to `.js` for better IDE support
+- Updated all documentation with new structure
+
+### Infrastructure
+- Set up clasp configuration for multi-project deployment
+- Created `.claspignore` and `.gitignore` files
+- Added `package.json` with npm scripts
+- Created automation scripts for common tasks
+
+## Future Enhancements
+
+### Planned Features
+- Automated testing framework
+- CI/CD with GitHub Actions
+- Additional shared components (UI dialogs, wizards)
+- ObservePoint API mock for local testing
+- Tool marketplace/catalog
+- Performance monitoring
+- Usage analytics
+
+### Under Consideration
+- Library versioning strategy
+- Breaking change management
+- Tool dependency tracking
+- Customer-facing documentation site
+
+## Version 2 - 2025-12-23 14:38
+Fixed library identifier to ObservePointTools, removed email functionality, simplified customer sheet creation
+
+## Version 3 - 2025-12-23 14:45
+Fixed Grid Importer dialog hanging issue by separating config save and import trigger
+
+## Version 4 - 2026-01-06 10:34
+Initial version
+
+## Version 5 - 2026-01-06 10:54
+Project cleanup: removed 8 obsolete files, updated documentation to reflect unified library architecture
