@@ -130,8 +130,12 @@ function showGridImporterConfigDialog() {
             
             google.script.run
               .withSuccessHandler(function() {
-                // Close config dialog and show progress dialog
+                // Close config dialog
                 google.script.host.close();
+                // Show progress dialog after a brief delay
+                setTimeout(function() {
+                  google.script.run.showGridImporterLiveProgress();
+                }, 200);
               })
               .withFailureHandler(function(error) {
                 buttons.forEach(btn => btn.disabled = false);
@@ -182,9 +186,6 @@ function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) 
   configSheet.setColumnWidth(3, 400);
   
   Logger.info('config_saved', 'Grid Importer configuration saved');
-  
-  // Show progress dialog immediately
-  showGridImporterLiveProgress();
   
   // Trigger import in a separate execution context
   // This avoids dialog conflicts by running after this function completes

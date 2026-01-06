@@ -89,3 +89,6 @@ Fix DIALOG_STYLES reference error - convert constant to function for customer sh
 
 ## Version 10 - 2026-01-06 12:20
 Fix gridImporter_initConfig - add missing LOG_SHEET_NAME constant
+
+## Version 11 - 2026-01-06 12:23
+Fix eternal spinner - show progress dialog from client-side after config saves
