@@ -29,8 +29,37 @@ var IMPORT_PROGRESS = {
 };
 
 function gridImporter_initConfig() {
-  // Show the config dialog instead of just creating an empty sheet
-  showGridImporterConfigDialog();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let configSheet = ss.getSheetByName(GRID_CONFIG_SHEET_NAME);
+  
+  if (configSheet) {
+    throw new Error('Config sheet already exists. Please edit the existing GridImporter_Config sheet.');
+  }
+  
+  configSheet = ss.insertSheet(GRID_CONFIG_SHEET_NAME);
+  
+  const headers = [
+    ['Setting', 'Value', 'Description'],
+    ['OP_API_KEY', '', 'Your ObservePoint API key'],
+    ['SAVED_REPORT_ID', '', 'The ID of the saved report to import'],
+    ['BATCH_SIZE', '50000', 'Number of rows to write at once'],
+    ['MAX_PAGES', '', 'Maximum pages to fetch (leave empty for all pages)']
+  ];
+  
+  configSheet.getRange(1, 1, headers.length, 3).setValues(headers);
+  configSheet.getRange(1, 1, 1, 3)
+    .setFontWeight('bold')
+    .setBackground('#4285f4')
+    .setFontColor('#ffffff');
+  
+  configSheet.setColumnWidth(1, 200);
+  configSheet.setColumnWidth(2, 300);
+  configSheet.setColumnWidth(3, 400);
+  
+  // Also create log sheet if it doesn't exist
+  createLogSheet();
+  
+  log('INFO', 'config_initialized', 'Grid Importer configuration sheet created');
 }
 
 function createLogSheet() {
@@ -84,10 +113,29 @@ function log(level, action, message) {
 }
 
 function gridImporter_importReport() {
-  // This should not be called from library - customer wrapper handles it
-  // Customer wrapper will call getGridImporterConfig() and getGridImporterDialogHtml()
-  // then show the dialog using their own getUi()
-  throw new Error('gridImporter_importReport must be called from customer wrapper, not library');
+  try {
+    const apiKey = getConfigValue('OP_API_KEY');
+    const reportId = getConfigValue('SAVED_REPORT_ID');
+    const batchSize = parseInt(getConfigValue('BATCH_SIZE')) || 50000;
+    const maxPages = getConfigValue('MAX_PAGES') ? parseInt(getConfigValue('MAX_PAGES')) : null;
+    
+    if (!apiKey || !reportId) {
+      throw new Error('Config missing or incomplete. Please fill in OP_API_KEY and SAVED_REPORT_ID in the GridImporter_Config sheet.');
+    }
+    
+    // Run import with config from sheet
+    executeGridImport(apiKey, reportId, batchSize, maxPages);
+    
+  } catch (e) {
+    throw new Error(
+      'Grid Importer configuration not found or incomplete.\n\n' +
+      'Please use "Initialize Config" menu option first, then fill in:\n' +
+      '- OP_API_KEY: Your ObservePoint API key\n' +
+      '- SAVED_REPORT_ID: The report ID to import\n\n' +
+      'Then run "Import Saved Report" again.\n\n' +
+      'Error: ' + e.message
+    );
+  }
 }
 
 function getQueryDefinition(apiKey, reportId) {

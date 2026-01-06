@@ -119,3 +119,6 @@ Fix Grid Importer dialog - customer wrapper shows dialog from customer context
 
 ## Version 20 - 2026-01-06 13:00
 Fix dialog callback - remove ObservePointTools prefix and add customer wrapper
+
+## Version  - 2026-01-06 14:23
+Simplified Grid Importer - separate menu items for config and import, no dialogs

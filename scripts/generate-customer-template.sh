@@ -51,31 +51,12 @@ EOF
 
 # Generate wrapper functions for all discovered functions
 for func in $ALL_FUNCTIONS; do
-  # Special case: gridImporter_importReport needs to show dialog from customer context
-  if [ "$func" = "gridImporter_importReport" ]; then
-    cat >> "$OUTPUT_FILE" << 'EOF'
-function gridImporter_importReport() {
-  // Show dialog from customer code (has getUi() access)
-  const config = ObservePointTools.getGridImporterConfig();
-  const html = ObservePointTools.getGridImporterDialogHtml(config);
-  const htmlOutput = HtmlService.createHtmlOutput(html).setWidth(550).setHeight(600);
-  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Grid API Importer Setup');
-}
-
-// Dialog callback - must be in customer code
-function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) {
-  ObservePointTools.saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages);
-}
-
-EOF
-  else
-    cat >> "$OUTPUT_FILE" << EOF
+  cat >> "$OUTPUT_FILE" << EOF
 function $func() {
   ObservePointTools.$func();
 }
 
 EOF
-  fi
 done
 
 cat >> "$OUTPUT_FILE" << 'EOF'

@@ -17,6 +17,7 @@ function onOpen() {
   
   ui.createMenu('ObservePoint Tools')
     .addSubMenu(ui.createMenu('Grid API Importer')
+      .addItem('Initialize Config', 'gridImporter_initConfig')
       .addItem('Import Saved Report', 'gridImporter_importReport')
       .addItem('Clear Data', 'gridImporter_clearData'))
     .addSubMenu(ui.createMenu('Webhook Automation')
@@ -48,16 +49,11 @@ function gridImporter_clearData() {
 }
 
 function gridImporter_importReport() {
-  // Show dialog from customer code (has getUi() access)
-  const config = ObservePointTools.getGridImporterConfig();
-  const html = ObservePointTools.getGridImporterDialogHtml(config);
-  const htmlOutput = HtmlService.createHtmlOutput(html).setWidth(550).setHeight(600);
-  SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Grid API Importer Setup');
+  ObservePointTools.gridImporter_importReport();
 }
 
-// Dialog callback - must be in customer code
-function saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages) {
-  ObservePointTools.saveGridImporterConfigAndImport(apiKey, reportId, batchSize, maxPages);
+function gridImporter_initConfig() {
+  ObservePointTools.gridImporter_initConfig();
 }
 
 function initializeAllConfigs() {
