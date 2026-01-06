@@ -25,11 +25,10 @@ function onOpen() {
       .addItem('Manual Run Primary', 'webhooks_manualRunPrimary')
       .addItem('Manual Run Secondary', 'webhooks_manualRunSecondary')
       .addItem('Initialize Config', 'webhooks_initConfig'))
-    .addSeparator()
-    .addSubMenu(ui.createMenu('Customer Management')
-      .addItem('Create Customer Sheet', 'showCreateCustomerSheetDialog')
-      .addItem('View Customer Registry', 'viewCustomerSheetRegistry')
-      .addItem('Check for Updates Needed', 'checkForOutdatedSheets'))
+    .addSubMenu(ui.createMenu('Sitemap Monitor')
+      .addItem('Setup & Run Monitor', 'sitemapMonitor_showSetupDialog')
+      .addItem('Run Monitor', 'sitemapMonitor_runMonitor')
+      .addItem('Initialize Config', 'sitemapMonitor_initConfig'))
     .addSeparator()
     .addItem('Initialize All Configs', 'initializeAllConfigs')
     .addItem('View Execution Log', 'showExecutionLog')
@@ -40,10 +39,6 @@ function onOpen() {
 // ============================================================================
 // Wrapper Functions - Call library functions
 // ============================================================================
-
-function checkForOutdatedSheets() {
-  ObservePointTools.checkForOutdatedSheets();
-}
 
 function clearExecutionLog() {
   ObservePointTools.clearExecutionLog();
@@ -65,16 +60,20 @@ function initializeAllConfigs() {
   ObservePointTools.initializeAllConfigs();
 }
 
-function showCreateCustomerSheetDialog() {
-  ObservePointTools.showCreateCustomerSheetDialog();
-}
-
 function showExecutionLog() {
   ObservePointTools.showExecutionLog();
 }
 
-function viewCustomerSheetRegistry() {
-  ObservePointTools.viewCustomerSheetRegistry();
+function sitemapMonitor_initConfig() {
+  ObservePointTools.sitemapMonitor_initConfig();
+}
+
+function sitemapMonitor_runMonitor() {
+  ObservePointTools.sitemapMonitor_runMonitor();
+}
+
+function sitemapMonitor_showSetupDialog() {
+  ObservePointTools.sitemapMonitor_showSetupDialog();
 }
 
 function webhooks_initConfig() {

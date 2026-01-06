@@ -24,6 +24,13 @@ This library is deployed as an Apps Script Library that can be used in any Googl
 - Primary and secondary audit workflow
 - Webhook-triggered automation
 
+### Sitemap Monitor
+- Monitor sitemaps for new pages
+- Track URLs and lastmod dates
+- Automatically update ObservePoint audits with new URLs only
+- Optional auto-run audit after update
+- Maintains tracking history in Google Sheets
+
 ## For Library Users
 
 See **[LIBRARY_USAGE.md](LIBRARY_USAGE.md)** for complete instructions on using this library in your Google Sheets.

@@ -10,11 +10,15 @@ MAIN_FILE="src/Main.js"
 echo "🔧 Generating customer template Code.js from Main.js menu structure..."
 
 # Extract the onOpen function from Main.js
-# We'll parse it to get the exact menu structure
-ONOPEN_CONTENT=$(sed -n '/^function onOpen()/,/^}/p' "$MAIN_FILE")
+# We'll parse it to get the menu structure, excluding Customer Management submenu
+ONOPEN_FULL=$(sed -n '/^function onOpen()/,/^}/p' "$MAIN_FILE")
 
-# Extract all function names referenced in the menu
-ALL_FUNCTIONS=$(echo "$ONOPEN_CONTENT" | grep -o "'[a-zA-Z_]*'" | tr -d "'" | grep -E "^(gridImporter_|webhooks_|show|view|check|initialize|clear)" | sort -u)
+# Remove the Customer Management submenu and its separator
+# This removes from the Customer Management line through the closing paren and next separator
+ONOPEN_CONTENT=$(echo "$ONOPEN_FULL" | sed '/addSubMenu(ui.createMenu.*Customer Management/,/addSeparator()/{ /addSubMenu(ui.createMenu.*Customer Management/d; /addSeparator()/d; /addItem.*Customer/d; }'  | sed '/checkForOutdatedSheets/d' | sed '/viewCustomerSheetRegistry/d' | sed '/showCreateCustomerSheetDialog/d')
+
+# Extract all function names referenced in the menu (excluding Customer Management functions)
+ALL_FUNCTIONS=$(echo "$ONOPEN_CONTENT" | grep -o "'[a-zA-Z_]*'" | tr -d "'" | grep -E "^(gridImporter_|webhooks_|sitemapMonitor_|initializeAllConfigs|showExecutionLog|clearExecutionLog)" | sort -u)
 
 # Generate the Code.js file header
 cat > "$OUTPUT_FILE" << 'EOF'
@@ -68,4 +72,4 @@ EOF
 echo "✅ Generated $OUTPUT_FILE with menu structure from Main.js"
 echo ""
 echo "📋 Functions included: $(echo "$ALL_FUNCTIONS" | wc -l | tr -d ' ') wrapper functions"
-echo "🔄 Menu structure synced from src/Main.js"
+echo "🔄 Menu structure synced from src/Main.js (Customer Management excluded)"

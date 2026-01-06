@@ -77,3 +77,6 @@ Project cleanup: removed 8 obsolete files, updated documentation to reflect unif
 
 ## Version 6 - 2026-01-06 11:36
 Menu sync: customer template now auto-generates from Main.js menu structure to ensure menus stay in sync
+
+## Version 7 - 2026-01-06 11:53
+Exclude Customer Management submenu from customer template - internal tool only

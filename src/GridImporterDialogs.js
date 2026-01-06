@@ -80,7 +80,7 @@ function showGridImporterConfigDialog() {
           
           <div class="form-group">
             <label>Saved Report ID <span class="required">*</span></label>
-            <input type="text" id="reportId" value="${existingReportId}" required placeholder="e.g., 16076">
+            <input type="text" id="reportId" value="${existingReportId}" required placeholder="e.g., 12345">
             <div class="help-text">Find the report ID in the URL when viewing a saved report</div>
           </div>
           

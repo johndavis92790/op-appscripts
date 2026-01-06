@@ -29,6 +29,10 @@ function onOpen() {
       .addItem('Manual Run Primary', 'webhooks_manualRunPrimary')
       .addItem('Manual Run Secondary', 'webhooks_manualRunSecondary')
       .addItem('Initialize Config', 'webhooks_initConfig'))
+    .addSubMenu(ui.createMenu('Sitemap Monitor')
+      .addItem('Setup & Run Monitor', 'sitemapMonitor_showSetupDialog')
+      .addItem('Run Monitor', 'sitemapMonitor_runMonitor')
+      .addItem('Initialize Config', 'sitemapMonitor_initConfig'))
     .addSeparator()
     .addSubMenu(ui.createMenu('Customer Management')
       .addItem('Create Customer Sheet', 'showCreateCustomerSheetDialog')
@@ -45,6 +49,7 @@ function initializeAllConfigs() {
   try {
     gridImporter_initConfig();
     webhooks_initConfig();
+    sitemapMonitor_initConfig();
     
     SpreadsheetApp.getUi().alert(
       'Configurations Initialized',
