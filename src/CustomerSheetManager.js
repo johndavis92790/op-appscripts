@@ -197,6 +197,132 @@ function registerCustomerSheet(customerName, spreadsheetId, spreadsheetUrl, note
 }
 
 /**
+ * Generate customer wrapper code dynamically from Main.js menu structure
+ * This ensures the wrapper code stays in sync with the library menu
+ * 
+ * Parses Main.js onOpen() to extract menu structure and function names automatically
+ */
+function generateCustomerWrapperCode() {
+  // Extract menu functions by parsing the onOpen function from Main.js
+  // This mirrors what generate-customer-template.sh does
+  
+  const onOpenSource = onOpen.toString();
+  
+  // Extract all function names from .addItem() calls
+  // Pattern: .addItem('Label', 'functionName')
+  const functionPattern = /\.addItem\([^,]+,\s*'([^']+)'\)/g;
+  const menuFunctions = [];
+  let match;
+  
+  while ((match = functionPattern.exec(onOpenSource)) !== null) {
+    const funcName = match[1];
+    // Exclude Customer Management functions
+    if (!funcName.includes('CustomerSheet') && 
+        funcName !== 'viewCustomerSheetRegistry' && 
+        funcName !== 'checkForOutdatedSheets') {
+      if (menuFunctions.indexOf(funcName) === -1) {
+        menuFunctions.push(funcName);
+      }
+    }
+  }
+  
+  // Sort for consistent output
+  menuFunctions.sort();
+  
+  // Generate the wrapper code
+  let code = `/**
+ * Customer Wrapper for ObservePoint CSM Toolbelt Library
+ * 
+ * This file connects your Google Sheet to the ObservePoint Toolbelt library.
+ * The library contains all the tools - this just creates the menu.
+ * 
+ * Library Script ID: ${LIBRARY_SCRIPT_ID}
+ * 
+ * AUTO-GENERATED - Do not edit manually
+ */
+
+// Create menu when sheet opens
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  
+  ui.createMenu('ObservePoint Tools')
+    .addSubMenu(ui.createMenu('Grid API Importer')
+      .addItem('Initialize Config', 'gridImporter_initConfig')
+      .addItem('Import Saved Report', 'gridImporter_importReport')
+      .addItem('Clear Data', 'gridImporter_clearData'))
+    .addSubMenu(ui.createMenu('Webhook Automation')
+      .addItem('Setup Wizard', 'webhooks_setupWizard')
+      .addItem('Manual Run Primary', 'webhooks_manualRunPrimary')
+      .addItem('Manual Run Secondary', 'webhooks_manualRunSecondary')
+      .addItem('Initialize Config', 'webhooks_initConfig'))
+    .addSubMenu(ui.createMenu('Sitemap Monitor')
+      .addItem('Initialize Config', 'sitemapMonitor_initConfig')
+      .addItem('Run Monitor', 'sitemapMonitor_runMonitor'))
+    .addSeparator()
+    .addItem('Initialize All Configs', 'initializeAllConfigs')
+    .addItem('View Execution Log', 'showExecutionLog')
+    .addItem('Clear Execution Log', 'clearExecutionLog')
+    .addToUi();
+}
+
+// ============================================================================
+// Wrapper Functions - Call library functions
+// ============================================================================
+
+`;
+
+  // Generate wrapper functions
+  menuFunctions.sort().forEach(function(funcName) {
+    code += `function ${funcName}() {
+  ObservePointTools.${funcName}();
+}
+
+`;
+  });
+  
+  // Add webhook endpoint with lock handling
+  code += `// ============================================================================
+// Webhook Endpoint (if using Web App deployment)
+// ============================================================================
+
+/**
+ * Webhook handler with lock protection
+ * Lock is handled here (not in library) to prevent cross-customer conflicts
+ */
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  
+  try {
+    // Try to acquire lock for 30 seconds
+    var hasLock = lock.tryLock(30000);
+    
+    if (!hasLock) {
+      // Another webhook is processing, return early
+      return ContentService.createTextOutput('Processing in progress, skipped duplicate')
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+    
+    // Call library function with lock held
+    return ObservePointTools.doPost(e);
+    
+  } catch (err) {
+    Logger.log('Webhook error: ' + err.message);
+    return ContentService.createTextOutput('Error: ' + err.message)
+      .setMimeType(ContentService.MimeType.TEXT);
+      
+  } finally {
+    // Always release lock
+    if (lock) {
+      lock.releaseLock();
+    }
+  }
+}
+`;
+  
+  return code;
+}
+
+/**
  * Show success dialog with link to new sheet
  */
 function showCustomerSheetCreatedDialog(customerName, spreadsheetUrl) {

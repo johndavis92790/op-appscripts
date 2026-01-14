@@ -156,7 +156,7 @@ var ObservePointClient = (function() {
   };
   
   ObservePointClient.prototype.runAudit = function(auditId) {
-    var url = this.baseUrlV2 + '/web-audits/' + auditId + '/run';
+    var url = this.baseUrlV2 + '/web-audits/' + auditId + '/runs';
     
     var options = {
       method: 'post',

@@ -64,8 +64,37 @@ cat >> "$OUTPUT_FILE" << 'EOF'
 // Webhook Endpoint (if using Web App deployment)
 // ============================================================================
 
+/**
+ * Webhook handler with lock protection
+ * Lock is handled here (not in library) to prevent cross-customer conflicts
+ */
 function doPost(e) {
-  return ObservePointTools.doPost(e);
+  var lock = LockService.getScriptLock();
+  
+  try {
+    // Try to acquire lock for 30 seconds
+    var hasLock = lock.tryLock(30000);
+    
+    if (!hasLock) {
+      // Another webhook is processing, return early
+      return ContentService.createTextOutput('Processing in progress, skipped duplicate')
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+    
+    // Call library function with lock held
+    return ObservePointTools.doPost(e);
+    
+  } catch (err) {
+    Logger.log('Webhook error: ' + err.message);
+    return ContentService.createTextOutput('Error: ' + err.message)
+      .setMimeType(ContentService.MimeType.TEXT);
+      
+  } finally {
+    // Always release lock
+    if (lock) {
+      lock.releaseLock();
+    }
+  }
 }
 EOF
 

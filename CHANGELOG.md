@@ -128,3 +128,45 @@ Ensure menu structure stays in sync - added dynamic wrapper generation
 
 ## Version  - 2026-01-06 14:52
 Test auto-generation of customer template before deployment
+
+## Version  - 2026-01-06 15:15
+Added Sitemap Monitor tool for tracking new pages in sitemaps
+
+## Version  - 2026-01-06 15:23
+Added Sitemap Monitor tool for tracking new pages in sitemaps
+
+## Version 30 - 2026-01-06 15:27
+Added Sitemap Monitor tool for tracking new pages in sitemaps
+
+## Version 31 - 2026-01-06 15:35
+Fix API error: include required id and name fields in audit update
+
+## Version 32 - 2026-01-06 15:38
+Fix API error: add required domainId field to audit update
+
+## Version 33 - 2026-01-06 15:42
+Fix audit update: preserve all audit fields, only modify startingUrls
+
+## Version 34 - 2026-01-06 15:48
+Fix Sitemap Monitor: correct parameter order and remove read-only audit fields
+
+## Version 35 - 2026-01-06 15:53
+Fix audit run endpoint: use /runs instead of /run
+
+## Version 36 - 2026-01-06 16:04
+Sitemap Monitor: replace all audit URLs with sitemap URLs, exclude sitemap URL itself
+
+## Version 37 - 2026-01-06 16:11
+Fixed missing generateCustomerWrapperCode function - customer sheet creation now works and dynamically syncs with menu structure
+
+## Version 38 - 2026-01-06 16:39
+Sitemap Monitor: only audit new/updated URLs, skip if no changes
+
+## Version 39 - 2026-01-06 16:44
+Fix lastmod comparison: normalize to strings to prevent false 'updated' status
+
+## Version 40 - 2026-01-06 16:55
+Added doPost() function for webhook support in customer sheets
+
+## Version 41 - 2026-01-06 17:10
+Description of changes

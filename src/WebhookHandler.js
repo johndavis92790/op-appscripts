@@ -75,16 +75,7 @@ function doPostHandler(e) {
     return ContentService.createTextOutput('Missing stage parameter').setMimeType(ContentService.MimeType.TEXT);
   }
   
-  const lock = LockService.getScriptLock();
-  const lockKey = 'webhook_' + stage;
-  
   try {
-    const hasLock = lock.tryLock(1000);
-    if (!hasLock) {
-      log('WARN', stage, 'Another webhook is already processing this stage. Skipping duplicate.');
-      return ContentService.createTextOutput('Already processing').setMimeType(ContentService.MimeType.TEXT);
-    }
-    
     if (stage === 'primary') {
       handlePrimaryAuditComplete();
     } else if (stage === 'secondary') {
@@ -96,20 +87,41 @@ function doPostHandler(e) {
     return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
   } catch (err) {
     Logger.log('Error: ' + err.message);
-    log('ERROR', stage, err.message);
+    log('ERROR', stage, err.message + '\n' + (err.stack || ''));
     return ContentService.createTextOutput('Error: ' + err.message).setMimeType(ContentService.MimeType.TEXT);
-  } finally {
-    lock.releaseLock();
   }
 }
 
-function webhooks_manualRunPrimary() {
+function handlePrimaryAuditComplete() {
   processPrimaryReportData();
   
   const config = getConfig();
   const uniqueUrls = getUniqueUrlsFromSheet();
   const runId = updateAndRunSecondaryAudit(uniqueUrls, config);
   log('INFO', 'secondary_triggered', 'Started secondary audit run', runId);
+}
+
+function handleSecondaryAuditComplete() {
+  const config = getConfig();
+  log('INFO', 'secondary_start', 'Fetching broken links report ' + config.BROKEN_REPORT_ID);
+  
+  const brokenData = fetchGridReportDataWithRetry(config.BROKEN_REPORT_ID, config, 10, 30);
+  
+  if (!brokenData || brokenData.rows.length === 0) {
+    log('WARN', 'secondary', 'No broken links found after 10 retries. This may be expected if there are no broken links.');
+  }
+  
+  writeGridDataToSheet(SHEET_NAMES.BROKEN_REPORT, brokenData);
+  log('INFO', 'broken_report', 'Wrote ' + brokenData.rows.length + ' broken links to sheet');
+  
+  const primaryData = readSheetAsGridData(SHEET_NAMES.PRIMARY_REPORT);
+  const joinedData = joinReports(primaryData, brokenData);
+  writeJoinedDataToSheet(SHEET_NAMES.FINAL_REPORT, joinedData);
+  log('INFO', 'join_complete', 'Created final report with ' + joinedData.rows.length + ' rows');
+}
+
+function webhooks_manualRunPrimary() {
+  handlePrimaryAuditComplete();
 }
 
 function processPrimaryReportData() {
@@ -161,22 +173,7 @@ function getUniqueUrlsFromSheet() {
 }
 
 function webhooks_manualRunSecondary() {
-  const config = getConfig();
-  log('INFO', 'secondary_start', 'Fetching broken links report ' + config.BROKEN_REPORT_ID);
-  
-  const brokenData = fetchGridReportDataWithRetry(config.BROKEN_REPORT_ID, config, 10, 30);
-  
-  if (!brokenData || brokenData.rows.length === 0) {
-    log('WARN', 'secondary', 'No broken links found after 10 retries. This may be expected if there are no broken links.');
-  }
-  
-  writeGridDataToSheet(SHEET_NAMES.BROKEN_REPORT, brokenData);
-  log('INFO', 'broken_report', 'Wrote ' + brokenData.rows.length + ' broken links to sheet');
-  
-  const primaryData = readSheetAsGridData(SHEET_NAMES.PRIMARY_REPORT);
-  const joinedData = joinReports(primaryData, brokenData);
-  writeJoinedDataToSheet(SHEET_NAMES.FINAL_REPORT, joinedData);
-  log('INFO', 'join_complete', 'Created final report with ' + joinedData.rows.length + ' rows');
+  handleSecondaryAuditComplete();
 }
 
 function fetchGridReportDataWithRetry(reportId, config, maxRetries, waitSeconds) {

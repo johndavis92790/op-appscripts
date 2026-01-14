@@ -35,9 +35,8 @@ function onOpen() {
       .addItem('Manual Run Secondary', 'webhooks_manualRunSecondary')
       .addItem('Initialize Config', 'webhooks_initConfig'))
     .addSubMenu(ui.createMenu('Sitemap Monitor')
-      .addItem('Setup & Run Monitor', 'sitemapMonitor_showSetupDialog')
-      .addItem('Run Monitor', 'sitemapMonitor_runMonitor')
-      .addItem('Initialize Config', 'sitemapMonitor_initConfig'))
+      .addItem('Initialize Config', 'sitemapMonitor_initConfig')
+      .addItem('Run Monitor', 'sitemapMonitor_runMonitor'))
     .addSeparator()
     .addSubMenu(ui.createMenu('Customer Management')
       .addItem('Create Customer Sheet', 'showCreateCustomerSheetDialog')
@@ -91,4 +90,12 @@ function clearExecutionLog() {
     Logger.clearLog();
     ui.alert('Execution log cleared successfully.');
   }
+}
+
+/**
+ * Webhook endpoint for Web App deployments
+ * Handles POST requests from ObservePoint webhooks
+ */
+function doPost(e) {
+  return doPostHandler(e);
 }

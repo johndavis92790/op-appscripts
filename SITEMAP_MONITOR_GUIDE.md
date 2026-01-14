@@ -15,20 +15,32 @@ The Sitemap Monitor tool automatically checks a sitemap for new pages and update
 
 ## Quick Start
 
-### 1. Setup
+### 1. Initialize Configuration
 
 From the Google Sheets menu:
 ```
-ObservePoint Tools → Sitemap Monitor → Setup & Run Monitor
+ObservePoint Tools → Sitemap Monitor → Initialize Config
 ```
 
-This opens a dialog where you enter:
-- **ObservePoint API Key**: Your API key from ObservePoint
-- **Audit ID**: The ID of the audit to update with new URLs
-- **Sitemap URL**: The full URL to the sitemap XML file
-- **Auto-run**: Whether to automatically run the audit after updating
+This creates a `SitemapMonitor_Config` sheet with these settings:
+- **API_KEY**: Your ObservePoint API key
+- **AUDIT_ID**: The ID of the audit to update with new URLs
+- **SITEMAP_URL**: The full URL to the sitemap XML file
+- **AUTO_RUN_AUDIT**: `true` or `false` - whether to automatically run the audit after updating
 
-### 2. First Run
+### 2. Fill in Configuration
+
+Open the `SitemapMonitor_Config` sheet and fill in your values:
+- Get your API key from: https://app.observepoint.com/my-profile
+- Find your audit ID in the ObservePoint URL when viewing an audit
+- Enter the full sitemap URL (e.g., `https://www.example.com/en-us/sitemap.xml`)
+
+### 3. Run the Monitor
+
+From the Google Sheets menu:
+```
+ObservePoint Tools → Sitemap Monitor → Run Monitor
+```
 
 On the first run, the tool will:
 1. Fetch all URLs from the sitemap
@@ -37,7 +49,7 @@ On the first run, the tool will:
 4. Add all URLs to your ObservePoint audit
 5. Optionally run the audit
 
-### 3. Subsequent Runs
+### 4. Subsequent Runs
 
 On future runs, the tool will:
 1. Fetch the current sitemap
@@ -47,34 +59,24 @@ On future runs, the tool will:
 5. Update the tracking sheet
 6. Optionally run the audit
 
+### 5. Check Results
+
+All progress and results are logged to the `Execution_Log` sheet:
+- Monitor start/completion times
+- Number of URLs found (total, new, updated)
+- Audit update status
+- Any errors encountered
+
+Check the `SitemapMonitor_Tracking` sheet to see all discovered URLs and their status.
+
 ## Configuration
 
-### Using the Setup Dialog (Recommended)
+The tool uses a config-first approach with no interactive dialogs:
 
-The easiest way is to use the setup dialog:
-```
-ObservePoint Tools → Sitemap Monitor → Setup & Run Monitor
-```
-
-### Manual Configuration
-
-Alternatively, you can manually configure:
-
-1. Initialize the config sheet:
-   ```
-   ObservePoint Tools → Sitemap Monitor → Initialize Config
-   ```
-
-2. Fill in the `SitemapMonitor_Config` sheet:
-   - `API_KEY`: Your ObservePoint API key
-   - `AUDIT_ID`: The audit ID to update
-   - `SITEMAP_URL`: The sitemap URL to monitor
-   - `AUTO_RUN_AUDIT`: `true` or `false`
-
-3. Run the monitor:
-   ```
-   ObservePoint Tools → Sitemap Monitor → Run Monitor
-   ```
+1. **Initialize**: Creates `SitemapMonitor_Config` sheet
+2. **Configure**: Fill in your settings in the config sheet
+3. **Run**: Execute the monitor
+4. **Review**: Check `Execution_Log` for results
 
 ## Tracking Sheet
 
@@ -93,29 +95,23 @@ The `SitemapMonitor_Tracking` sheet contains:
 ### Monitor New Blog Posts
 
 Check a blog sitemap daily for new posts:
-```
-Sitemap URL: https://www.example.com/blog/sitemap.xml
-Auto-run: true
-```
-
-Set up a time-based trigger to run daily.
+1. Set `SITEMAP_URL` to `https://www.example.com/blog/sitemap.xml`
+2. Set `AUTO_RUN_AUDIT` to `true`
+3. Set up a time-based trigger to run `sitemapMonitor_runMonitor` daily
 
 ### Track Product Pages
 
 Monitor an e-commerce sitemap for new products:
-```
-Sitemap URL: https://www.example.com/products/sitemap.xml
-Auto-run: true
-```
+1. Set `SITEMAP_URL` to `https://www.example.com/products/sitemap.xml`
+2. Set `AUTO_RUN_AUDIT` to `true`
+3. Review `Execution_Log` to see when new products are added
 
 ### Monitor Multiple Sections
 
-Create separate configurations for different site sections:
-- Main sitemap: `https://www.example.com/sitemap.xml`
-- Blog sitemap: `https://www.example.com/blog/sitemap.xml`
-- Products sitemap: `https://www.example.com/products/sitemap.xml`
-
-Each can update a different audit.
+For multiple sitemaps, you can:
+- Use separate Google Sheets for each sitemap
+- Or modify the config sheet name in the code to support multiple configs
+- Each configuration can update a different audit
 
 ## Automation with Triggers
 
@@ -137,7 +133,7 @@ The monitor will now run automatically at your chosen interval.
 For the Lumen.com sitemap provided:
 
 ```
-Sitemap URL: https://www.lumen.com/en-us/sitemap.xml
+Sitemap URL: https://www.example.com/en-us/sitemap.xml
 ```
 
 This sitemap includes:
@@ -157,8 +153,9 @@ The tool will:
 
 Before setting up automation:
 - Run the monitor manually a few times
-- Verify the URLs are being tracked correctly
-- Check that the audit is being updated as expected
+- Check the `Execution_Log` sheet for progress
+- Verify the `SitemapMonitor_Tracking` sheet is populated correctly
+- Confirm the audit is being updated in ObservePoint
 
 ### 2. Choose Appropriate Frequency
 
@@ -167,9 +164,14 @@ Consider your site's update frequency:
 - **Medium-frequency sites** (e-commerce): Daily or weekly
 - **Low-frequency sites** (corporate): Weekly or monthly
 
-### 3. Monitor the Tracking Sheet
+### 3. Monitor the Logs
 
-Regularly review the `SitemapMonitor_Tracking` sheet:
+Regularly review the `Execution_Log` sheet:
+- Check for successful monitor runs
+- Look for any errors or warnings
+- Track how many new URLs are being discovered
+
+And review the `SitemapMonitor_Tracking` sheet:
 - Check for unexpected new URLs
 - Verify lastmod dates are updating
 - Look for patterns in when content is added
@@ -214,7 +216,7 @@ For sitemaps with thousands of URLs:
 
 **Cause**: All URLs in the sitemap are already tracked.
 
-**Result**: This is normal behavior - the audit won't be updated if there are no new URLs.
+**Result**: This is normal behavior - the audit won't be updated if there are no new URLs. Check the `Execution_Log` sheet to confirm.
 
 ### "API Error 404: Audit not found"
 
@@ -230,9 +232,16 @@ For sitemaps with thousands of URLs:
 **Cause**: The sheet may be protected or there's a permissions issue.
 
 **Solutions**:
-- Check sheet protection settings
-- Verify you have edit access to the spreadsheet
-- Try manually deleting and recreating the tracking sheet
+- Check the `Execution_Log` sheet for error messages
+- Verify sheet protection settings
+- Ensure you have edit access to the spreadsheet
+- Try manually deleting the tracking sheet and running again
+
+### No Output or Errors
+
+**Cause**: The function completed but you didn't see any feedback.
+
+**Solution**: This is expected behavior - the tool runs silently. Check the `Execution_Log` sheet to see what happened.
 
 ## API Details
 

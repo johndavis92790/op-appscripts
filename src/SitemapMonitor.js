@@ -21,17 +21,12 @@ var SitemapMonitor = (function() {
     var configItems = [
       ['API_KEY', '', 'Your ObservePoint API key'],
       ['AUDIT_ID', '', 'The audit ID to update with new URLs'],
-      ['SITEMAP_URL', '', 'The sitemap URL to monitor (e.g., https://www.lumen.com/en-us/sitemap.xml)'],
+      ['SITEMAP_URL', '', 'The sitemap URL to monitor (e.g., https://www.example.com/en-us/sitemap.xml)'],
       ['AUTO_RUN_AUDIT', 'true', 'Automatically run audit after updating URLs (true/false)']
     ];
     
     ConfigManager.createConfigSheet(CONFIG_SHEET, configItems);
-    
-    SpreadsheetApp.getUi().alert(
-      'Configuration Created',
-      'Please fill in the SitemapMonitor_Config sheet with your settings.',
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
+    Logger.log('INFO', 'config_created', 'SitemapMonitor_Config sheet created. Please fill in your settings.');
   }
   
   function fetchSitemap(sitemapUrl) {
@@ -133,8 +128,12 @@ var SitemapMonitor = (function() {
     for (var i = 0; i < data.length; i++) {
       var url = data[i][0];
       if (url) {
+        var lastmodValue = data[i][1];
+        // Normalize lastmod to string for comparison (could be Date object from sheet)
+        var lastmodString = lastmodValue ? (lastmodValue instanceof Date ? lastmodValue.toISOString().split('T')[0] : String(lastmodValue)) : '';
+        
         tracked[url] = {
-          lastmod: data[i][1],
+          lastmod: lastmodString,
           firstSeen: data[i][2],
           lastChecked: data[i][3],
           status: data[i][4],
@@ -156,10 +155,13 @@ var SitemapMonitor = (function() {
       var url = sitemapUrl.url;
       
       if (!trackedUrls[url]) {
+        // URL is not in tracking sheet - it's new
         newUrls.push(sitemapUrl);
-      } else if (sitemapUrl.lastmod && sitemapUrl.lastmod !== trackedUrls[url].lastmod) {
+      } else if (sitemapUrl.lastmod && trackedUrls[url].lastmod && sitemapUrl.lastmod !== trackedUrls[url].lastmod) {
+        // URL exists but lastmod date has changed - it's updated
         updatedUrls.push(sitemapUrl);
       }
+      // If lastmod is same or missing, URL is unchanged - do nothing
     }
     
     Logger.log('INFO', 'identify_new_urls', 'Found ' + newUrls.length + ' new URLs and ' + updatedUrls.length + ' updated URLs');
@@ -207,46 +209,55 @@ var SitemapMonitor = (function() {
     }
   }
   
-  function updateAuditWithNewUrls(auditId, newUrls, apiKey) {
-    if (newUrls.length === 0) {
-      Logger.log('INFO', 'no_new_urls', 'No new URLs to add to audit');
+  function updateAuditWithChangedUrls(apiKey, auditId, changedUrls, sitemapUrl) {
+    if (changedUrls.length === 0) {
+      Logger.log('INFO', 'no_changes', 'No new or updated URLs to audit');
       return null;
     }
     
     var client = new ObservePointClient(apiKey);
     
+    // Step 1: Get the full audit object
     var audit = client.getAudit(auditId);
     Logger.log('INFO', 'audit_fetched', 'Current audit has ' + (audit.startingUrls ? audit.startingUrls.length : 0) + ' starting URLs');
     
-    var currentUrls = audit.startingUrls || [];
-    var urlStrings = newUrls.map(function(item) { return item.url; });
+    var previousCount = audit.startingUrls ? audit.startingUrls.length : 0;
     
-    var combinedUrls = currentUrls.concat(urlStrings);
+    // Extract URLs from changed URLs data and exclude the sitemap URL itself
+    var urlStrings = changedUrls.map(function(item) { return item.url; });
+    var filteredUrls = urlStrings.filter(function(url) { return url !== sitemapUrl; });
     
-    var uniqueUrls = [];
-    var seen = {};
-    for (var i = 0; i < combinedUrls.length; i++) {
-      if (!seen[combinedUrls[i]]) {
-        seen[combinedUrls[i]] = true;
-        uniqueUrls.push(combinedUrls[i]);
-      }
-    }
+    // Step 2: Replace all starting URLs with only new/updated URLs (excluding sitemap URL)
+    audit.startingUrls = filteredUrls;
+    audit.limit = filteredUrls.length;
     
-    var updates = {
-      startingUrls: uniqueUrls
-    };
+    // Remove read-only fields that shouldn't be sent in PUT request
+    delete audit.created;
+    delete audit.lastRun;
+    delete audit.lastUpdated;
+    delete audit.queued;
+    delete audit.runs;
+    delete audit.screenshot;
+    delete audit.webAuditRunning;
+    delete audit.labels;
+    delete audit.rules;
+    delete audit.taggingPlans;
     
-    Logger.log('INFO', 'update_audit', 'Updating audit with ' + uniqueUrls.length + ' total URLs (added ' + newUrls.length + ' new)');
-    client.updateAudit(auditId, updates);
+    Logger.log('INFO', 'update_audit', 'Updating audit with ' + filteredUrls.length + ' changed URLs (new or updated)');
+    
+    // Step 3: Send the complete audit object back (without read-only fields)
+    client.updateAudit(auditId, audit);
     
     return {
-      previousCount: currentUrls.length,
-      newCount: newUrls.length,
-      totalCount: uniqueUrls.length
+      previousCount: previousCount,
+      changedCount: filteredUrls.length,
+      totalCount: filteredUrls.length
     };
   }
   
   function runMonitor() {
+    var startTime = new Date();
+    
     try {
       ConfigManager.validateRequired(['API_KEY', 'AUDIT_ID', 'SITEMAP_URL'], CONFIG_SHEET);
       
@@ -271,24 +282,31 @@ var SitemapMonitor = (function() {
         auditRun: false
       };
       
-      if (changes.newUrls.length > 0) {
-        var updateResult = updateAuditWithNewUrls(config.AUDIT_ID, changes.newUrls, config.API_KEY);
+      // Only update audit if there are new or updated URLs
+      if (changes.newUrls.length > 0 || changes.updatedUrls.length > 0) {
+        var changedUrls = changes.newUrls.concat(changes.updatedUrls);
+        var updateResult = updateAuditWithChangedUrls(config.API_KEY, config.AUDIT_ID, changedUrls, config.SITEMAP_URL);
         
         if (updateResult) {
           result.auditUpdated = true;
           result.previousUrlCount = updateResult.previousCount;
-          result.totalUrlCount = updateResult.totalCount;
+          result.changedUrlCount = updateResult.changedCount;
           
           if (config.AUTO_RUN_AUDIT === 'true' || config.AUTO_RUN_AUDIT === true) {
             var client = new ObservePointClient(config.API_KEY);
             client.runAudit(config.AUDIT_ID);
             result.auditRun = true;
-            Logger.log('INFO', 'audit_started', 'Audit ' + config.AUDIT_ID + ' started');
+            Logger.log('INFO', 'audit_started', 'Audit ' + config.AUDIT_ID + ' started with ' + changedUrls.length + ' URLs');
           }
         }
+      } else {
+        Logger.log('INFO', 'no_changes', 'No new or updated URLs found. Skipping audit update and run.');
       }
       
-      Logger.log('INFO', 'monitor_complete', 'Monitor complete: ' + JSON.stringify(result));
+      var duration = ((new Date() - startTime) / 1000).toFixed(2);
+      result.duration = duration;
+      
+      Logger.log('INFO', 'monitor_complete', 'Monitor complete in ' + duration + 's: ' + result.newUrls + ' new URLs, ' + result.updatedUrls + ' updated URLs');
       
       return result;
       
@@ -298,241 +316,10 @@ var SitemapMonitor = (function() {
     }
   }
   
-  function showSetupDialog() {
-    var html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <base target="_top">
-          <style>
-            body {
-              font-family: 'Google Sans', Arial, sans-serif;
-              padding: 24px;
-              line-height: 1.6;
-              margin: 0;
-              color: #202124;
-            }
-            h2 {
-              color: #1a73e8;
-              margin: 0 0 16px 0;
-              font-size: 22px;
-              font-weight: 400;
-            }
-            .form-group {
-              margin-bottom: 20px;
-            }
-            label {
-              display: block;
-              margin-bottom: 6px;
-              font-weight: 500;
-              color: #5f6368;
-            }
-            input[type="text"], input[type="password"] {
-              width: 100%;
-              padding: 10px;
-              border: 1px solid #dadce0;
-              border-radius: 4px;
-              font-size: 14px;
-              box-sizing: border-box;
-            }
-            input[type="text"]:focus, input[type="password"]:focus {
-              outline: none;
-              border-color: #1a73e8;
-            }
-            .checkbox-group {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-            input[type="checkbox"] {
-              width: 18px;
-              height: 18px;
-              cursor: pointer;
-            }
-            .button-container {
-              margin-top: 24px;
-              display: flex;
-              gap: 12px;
-              justify-content: flex-end;
-            }
-            button {
-              padding: 10px 24px;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 14px;
-              font-weight: 500;
-            }
-            .btn-primary {
-              background: #1a73e8;
-              color: white;
-            }
-            .btn-primary:hover {
-              background: #1765cc;
-            }
-            .btn-cancel {
-              background: #fff;
-              color: #5f6368;
-              border: 1px solid #dadce0;
-            }
-            .btn-cancel:hover {
-              background: #f8f9fa;
-            }
-            .info-box {
-              background: #e8f0fe;
-              padding: 12px;
-              border-radius: 4px;
-              margin-bottom: 20px;
-              font-size: 13px;
-              color: #1967d2;
-            }
-            .spinner {
-              display: none;
-              width: 14px;
-              height: 14px;
-              border: 2px solid rgba(255,255,255,.3);
-              border-radius: 50%;
-              border-top-color: #fff;
-              animation: spin 0.8s linear infinite;
-              margin-left: 8px;
-              vertical-align: middle;
-            }
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          </style>
-        </head>
-        <body>
-          <h2>Sitemap Monitor Setup</h2>
-          
-          <div class="info-box">
-            This tool monitors a sitemap for new pages and automatically updates an ObservePoint audit with only the new URLs found.
-          </div>
-          
-          <form id="setupForm">
-            <div class="form-group">
-              <label for="apiKey">ObservePoint API Key *</label>
-              <input type="password" id="apiKey" required placeholder="Enter your API key">
-            </div>
-            
-            <div class="form-group">
-              <label for="auditId">Audit ID *</label>
-              <input type="text" id="auditId" required placeholder="e.g., 123456">
-            </div>
-            
-            <div class="form-group">
-              <label for="sitemapUrl">Sitemap URL *</label>
-              <input type="text" id="sitemapUrl" required placeholder="e.g., https://www.example.com/sitemap.xml">
-            </div>
-            
-            <div class="form-group">
-              <div class="checkbox-group">
-                <input type="checkbox" id="autoRun" checked>
-                <label for="autoRun" style="margin: 0;">Automatically run audit after updating URLs</label>
-              </div>
-            </div>
-            
-            <div class="button-container">
-              <button type="button" class="btn-cancel" onclick="google.script.host.close()">Cancel</button>
-              <button type="submit" class="btn-primary" id="submitBtn">
-                Save & Run Monitor
-                <span class="spinner" id="spinner"></span>
-              </button>
-            </div>
-          </form>
-          
-          <script>
-            document.getElementById('setupForm').addEventListener('submit', function(e) {
-              e.preventDefault();
-              
-              const submitBtn = document.getElementById('submitBtn');
-              const spinner = document.getElementById('spinner');
-              
-              submitBtn.disabled = true;
-              spinner.style.display = 'inline-block';
-              
-              const config = {
-                apiKey: document.getElementById('apiKey').value,
-                auditId: document.getElementById('auditId').value,
-                sitemapUrl: document.getElementById('sitemapUrl').value,
-                autoRun: document.getElementById('autoRun').checked
-              };
-              
-              google.script.run
-                .withSuccessHandler(function(result) {
-                  google.script.host.close();
-                })
-                .withFailureHandler(function(error) {
-                  submitBtn.disabled = false;
-                  spinner.style.display = 'none';
-                  alert('Error: ' + error.message);
-                })
-                .handleSitemapSetup(config);
-            });
-          </script>
-        </body>
-      </html>
-    `;
-    
-    var htmlOutput = HtmlService.createHtmlOutput(html)
-      .setWidth(600)
-      .setHeight(500);
-    
-    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Sitemap Monitor Setup');
-  }
-  
-  function handleSitemapSetup(config) {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var configSheet = ss.getSheetByName(CONFIG_SHEET);
-    
-    if (!configSheet) {
-      initConfig();
-      configSheet = ss.getSheetByName(CONFIG_SHEET);
-    }
-    
-    ConfigManager.setValue('API_KEY', config.apiKey, CONFIG_SHEET);
-    ConfigManager.setValue('AUDIT_ID', config.auditId, CONFIG_SHEET);
-    ConfigManager.setValue('SITEMAP_URL', config.sitemapUrl, CONFIG_SHEET);
-    ConfigManager.setValue('AUTO_RUN_AUDIT', config.autoRun ? 'true' : 'false', CONFIG_SHEET);
-    
-    var result = runMonitor();
-    
-    showResultDialog(result, config);
-  }
-  
-  function showResultDialog(result, config) {
-    var message = '<h3>Sitemap Monitor Results</h3>';
-    message += '<p><strong>Total URLs in sitemap:</strong> ' + result.totalUrls + '</p>';
-    message += '<p><strong>New URLs found:</strong> ' + result.newUrls + '</p>';
-    message += '<p><strong>Updated URLs:</strong> ' + result.updatedUrls + '</p>';
-    
-    if (result.auditUpdated) {
-      message += '<p style="color: #34a853;"><strong>✓ Audit updated successfully</strong></p>';
-      message += '<p>Previous URL count: ' + result.previousUrlCount + '</p>';
-      message += '<p>New total URL count: ' + result.totalUrlCount + '</p>';
-      
-      if (result.auditRun) {
-        message += '<p style="color: #34a853;"><strong>✓ Audit started</strong></p>';
-        message += '<p>Check ObservePoint for audit progress.</p>';
-      }
-    } else {
-      message += '<p style="color: #5f6368;">No new URLs to add to audit.</p>';
-    }
-    
-    message += '<p style="margin-top: 20px;"><em>Check the SitemapMonitor_Tracking sheet for details.</em></p>';
-    
-    var htmlOutput = HtmlService.createHtmlOutput(message)
-      .setWidth(500)
-      .setHeight(400);
-    
-    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Monitor Complete');
-  }
   
   return {
     initConfig: initConfig,
-    runMonitor: runMonitor,
-    showSetupDialog: showSetupDialog,
-    handleSitemapSetup: handleSitemapSetup
+    runMonitor: runMonitor
   };
 })();
 
@@ -544,34 +331,15 @@ function sitemapMonitor_runMonitor() {
   try {
     var result = SitemapMonitor.runMonitor();
     
-    var ui = SpreadsheetApp.getUi();
-    var message = 'Sitemap Monitor Complete!\n\n' +
-                  'Total URLs: ' + result.totalUrls + '\n' +
-                  'New URLs: ' + result.newUrls + '\n' +
-                  'Updated URLs: ' + result.updatedUrls + '\n\n';
+    Logger.log('INFO', 'monitor_summary', 
+      'Monitor complete: ' + result.totalUrls + ' total URLs, ' + 
+      result.newUrls + ' new, ' + result.updatedUrls + ' updated. ' +
+      (result.auditUpdated ? 'Audit updated and ' + (result.auditRun ? 'started.' : 'ready to run.') : 'No changes to audit.'));
     
-    if (result.auditUpdated) {
-      message += 'Audit updated: ' + result.previousUrlCount + ' → ' + result.totalUrlCount + ' URLs\n';
-      if (result.auditRun) {
-        message += 'Audit started successfully!\n';
-      }
-    } else {
-      message += 'No new URLs to add to audit.\n';
-    }
-    
-    message += '\nCheck the SitemapMonitor_Tracking sheet for details.';
-    
-    ui.alert('Monitor Complete', message, ui.ButtonSet.OK);
+    return result;
     
   } catch (error) {
-    SpreadsheetApp.getUi().alert('Error', error.toString(), SpreadsheetApp.getUi().ButtonSet.OK);
+    Logger.log('ERROR', 'monitor_error', error.toString());
+    throw error;
   }
-}
-
-function sitemapMonitor_showSetupDialog() {
-  SitemapMonitor.showSetupDialog();
-}
-
-function handleSitemapSetup(config) {
-  SitemapMonitor.handleSitemapSetup(config);
 }

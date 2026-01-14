@@ -35,6 +35,27 @@ fi
 
 echo ""
 echo "🚀 Creating new deployment..."
+
+# Check current deployment count and clean up if needed
+DEPLOYMENT_COUNT=$(clasp deployments 2>&1 | grep -c '@[0-9]')
+echo "📊 Current deployments: $DEPLOYMENT_COUNT"
+
+if [ "$DEPLOYMENT_COUNT" -ge 20 ]; then
+  echo "🧹 Cleaning up old deployments (keeping 15 most recent)..."
+  
+  # Get all versioned deployments (exclude @HEAD), sort by version number, get oldest 5
+  # Format: - AKfycby... @1 - Description
+  OLD_DEPLOYMENTS=$(clasp deployments 2>&1 | grep '@[0-9]' | awk '{print $3, $2}' | sort -t@ -k2 -n | head -5 | awk '{print $2}')
+  
+  for DEPLOYMENT_ID in $OLD_DEPLOYMENTS; do
+    echo "  Removing old deployment: $DEPLOYMENT_ID"
+    clasp undeploy "$DEPLOYMENT_ID" 2>&1 | grep -v "Undeployed" || true
+  done
+  
+  echo "✅ Cleanup complete"
+  echo ""
+fi
+
 DEPLOY_OUTPUT=$(clasp deploy --description "$DESCRIPTION" 2>&1)
 
 if [ $? -ne 0 ]; then
@@ -43,8 +64,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Extract version number from output
-VERSION=$(echo "$DEPLOY_OUTPUT" | grep -o '@[0-9]*' | head -1 | tr -d '@')
+# Extract version number from output (format: "Deployed <ID> @<version>")
+VERSION=$(echo "$DEPLOY_OUTPUT" | grep -o '@[0-9]\+' | head -1 | tr -d '@')
+
+# If no version found, check if deployment was successful
+if [ -z "$VERSION" ]; then
+  echo "⚠️  Warning: Could not extract version number from deployment output"
+  echo "Output was: $DEPLOY_OUTPUT"
+  VERSION="unknown"
+fi
 
 echo ""
 echo "✅ Library updated successfully!"
