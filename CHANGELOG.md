@@ -170,3 +170,18 @@ Added doPost() function for webhook support in customer sheets
 
 ## Version 41 - 2026-01-06 17:10
 Description of changes
+
+## Version 42 - 2026-01-14 14:49
+Remove secondary audit trigger from primary webhook, add 30s delay before Grid API fetch
+
+## Version 43 - 2026-01-20 09:04
+Fixed pagination bug - removed page limit to fetch all report rows
+
+## Version 44 - 2026-01-20 09:10
+Added pagination logging to debug row fetch issue
+
+## Version 45 - 2026-01-20 09:11
+Added pagination object debug logging
+
+## Version 46 - 2026-01-20 09:12
+Fixed pagination - use totalPageCount instead of totalPages

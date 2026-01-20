@@ -97,13 +97,15 @@ function handlePrimaryAuditComplete() {
   
   const config = getConfig();
   const uniqueUrls = getUniqueUrlsFromSheet();
-  const runId = updateAndRunSecondaryAudit(uniqueUrls, config);
-  log('INFO', 'secondary_triggered', 'Started secondary audit run', runId);
+  updateSecondaryAuditStartingUrls(uniqueUrls, config);
+  log('INFO', 'starting_urls_updated', 'Updated secondary audit starting URLs with ' + uniqueUrls.length + ' URLs');
 }
 
 function handleSecondaryAuditComplete() {
   const config = getConfig();
-  log('INFO', 'secondary_start', 'Fetching broken links report ' + config.BROKEN_REPORT_ID);
+  log('INFO', 'secondary_start', 'Waiting 30 seconds for data to populate before fetching broken links report ' + config.BROKEN_REPORT_ID);
+  
+  Utilities.sleep(30000);
   
   const brokenData = fetchGridReportDataWithRetry(config.BROKEN_REPORT_ID, config, 10, 30);
   
@@ -231,9 +233,16 @@ function fetchGridReportData(reportId, config) {
   const rows = result.rows || [];
   
   let allRows = rows;
-  const totalPages = result.metadata.pagination.totalPages;
   
-  for (let page = 1; page < totalPages && page < 10; page++) {
+  log('INFO', 'pagination_debug', 'Pagination object: ' + JSON.stringify(result.metadata.pagination));
+  
+  const totalPages = result.metadata.pagination.totalPageCount;
+  const totalElements = result.metadata.pagination.totalCount || 'unknown';
+  
+  log('INFO', 'pagination', 'Total pages: ' + totalPages + ', Total elements: ' + totalElements + ', First page rows: ' + rows.length);
+  
+  for (let page = 1; page < totalPages; page++) {
+    log('INFO', 'pagination', 'Fetching page ' + page + ' of ' + (totalPages - 1));
     queryDef.page = page;
     const pageResponse = UrlFetchApp.fetch(url, {
       method: 'post',
@@ -245,8 +254,11 @@ function fetchGridReportData(reportId, config) {
     if (pageResponse.getResponseCode() === 200) {
       const pageResult = JSON.parse(pageResponse.getContentText());
       allRows = allRows.concat(pageResult.rows || []);
+      log('INFO', 'pagination', 'Page ' + page + ' added ' + (pageResult.rows || []).length + ' rows. Total now: ' + allRows.length);
     }
   }
+  
+  log('INFO', 'pagination', 'Finished fetching all pages. Final row count: ' + allRows.length);
   
   return { headers: headers, rows: allRows };
 }
@@ -272,7 +284,7 @@ function fetchSavedReport(reportId, config) {
   return JSON.parse(response.getContentText());
 }
 
-function updateAndRunSecondaryAudit(urls, config) {
+function updateSecondaryAuditStartingUrls(urls, config) {
   const auditId = config.SECONDARY_AUDIT_ID;
   
   const getUrl = config.BASE_URL + '/v2/web-audits/' + auditId;
@@ -310,23 +322,7 @@ function updateAndRunSecondaryAudit(urls, config) {
     throw new Error('Audit update failed: ' + updateResponse.getContentText());
   }
   
-  const runUrl = config.BASE_URL + '/v2/web-audits/' + auditId + '/runs';
-  const runOptions = {
-    method: 'post',
-    headers: {
-      'Authorization': 'api_key ' + config.API_KEY,
-      'Content-Type': 'application/json'
-    },
-    muteHttpExceptions: true
-  };
-  
-  const runResponse = UrlFetchApp.fetch(runUrl, runOptions);
-  if (runResponse.getResponseCode() >= 300) {
-    throw new Error('Audit run failed: ' + runResponse.getContentText());
-  }
-  
-  const runResult = JSON.parse(runResponse.getContentText());
-  return runResult.id || runResult.runId || 'unknown';
+  log('INFO', 'audit_updated', 'Secondary audit starting URLs updated with ' + urls.length + ' URLs');
 }
 
 function filterBrokenLinks(gridData) {
